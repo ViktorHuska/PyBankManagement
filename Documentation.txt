@@ -1,0 +1,183 @@
+Python Bank Management System v1.0
+Made by Viktor Huska
+
+Documentation
+
+1. Main task of Project
+
+System was created that can manage bank accounts of users, have it all stored in a local database and 
+further managed to fit the essential needs of customers of our bank.
+
+
+2. Brief Explanation of every method of the Bank Management System
+============================================================================================================
+
+2.1 Account.py 
+Main class of account of the bank. Holds most of the functionality, specifically:
+	
+
+2.1.1 Initialization of Account with first_name, last_name, nationality, DOB, balance (0, as DEFAULT), account_type,
+date_entered (auto-assigned with CURRENT TIMESTAMP), password, IBAN (auto-generated in a specific way 
+"DE" + random 10 digits + 4 zeros + 6 random digits), id (will be used as a login mean to the account),
+PIN(randomly generated 4 digits), password_error_count(0, as DEFAULT), PIN_error_count(0, as DEFAULT),
+error_limit (4, as DEFAULT).
+
+
+2.1.2 update_personal_details() - function that changes personal information. 
+Input will be asked to choose what is meant to be changed: a) Change password
+							   b) Change PIN
+							   c) Change first_name
+							   d) Change last_name
+							   e) Change nationality
+							   f) Change DOB
+After choice, password will be asked for security reasons. If password matches - change is possible. 
+In order to change information, new information must be entered twice.
+
+
+2.1.3 deposit_money() - function to add money to the account
+Checking PIN for security reasons. Afterwards, input amount of money you want to deposit. 
+Afterwards, new balance will be updated.
+Input must be only numeric.
+
+
+2.1.4 withdraw_money() - function to withdraw money from the account
+Checking PIN for security reasons. Afterwards, input amount of money you want to withdraw.
+If amount of money is bigger than you have in your balance, you will be denied this operation and will be asked to input new amount.
+Input must be only numeric.
+
+
+2.1.5 check_balance() - function to check current balance of your account
+Enter PIN for that operation. If PIN matches, account's balance will be shown.
+
+
+2.1.6 make_transaction() - function to transfer money from your account to another account.
+Must input PIN for that operation. Then enter IBAN of the person you want to send moeny to. 
+Then enter amount of money that you want to transfer. (if not enough, you will be denied operation).
+At the end, if everything is successful, you will receive the message "Transfer was done successfully! Your current balance is: current_balance"
+Transaction result is stored in the separate table in a DB and can be accessed for specific account.
+
+(Further notice for improvment: Check if the IBAN entered even exists in DB; cannot also transfer money to ourselves)
+
+
+2.1.7 check_all_transactions() - function to see all the transactions for different periods of time
+Enter PIN for that operation. If it matches, enter one of the suggested time periods during which all transactions were commited.
+
+
+2.1.8 access_support() - returns bank support contact details.
+
+
+2.1.9 logoff() - logoff of the account and come back to main screen.
+
+
+2.1.10 delete_account() - delete account from the DB
+PIN and password must be written to commit this opperation. 
+
+
+2.1.11 account_info() - print out all general information about the account.
+PIN must be entered to commit this operation.
+
+============================================================================================================
+
+2.2 main.py
+Main menu and starting point of program
+
+
+2.2.1 starting_menu() - starting menu of out program
+From here choice can be made: either a) Log in; b) Register account; c) Exit program
+
+
+Choice a): 
+Enter Login (id of account); enter password of account. If any don't match, error will be printed out.
+If entered all correctly, then you enter your account. Then proceed to the account_navigation().
+
+
+Choice b):
+Register new account with the corresponding details that will be asked to input. Specific things:
+ - when entering date, if you are born on e.g. 3 July 1999, you don't enter 1999-07-03(wrong), you enter 1999-7-3(correct)
+ - when entering account type, just type p, or s(correct); not premium, or standart(wrong), or any other text.
+ - no spaces before entering information
+
+After successful completion you will get a message with your IBAN, login, and PIN that must be saved in order to access newly created account.
+Afterwards, come back to the starting_menu().
+
+Choice c):
+Just exit program. (Still is bugged if logging in account and out many times. Then this will be in softlock).
+
+
+2.2.2 account_navigation - navigation menu for account, all actions are done from here.
+	  "================================================================="
+          "=============Welcome to your E-Bank account cabinet=============="
+          "================================================================="
+          "a) Check your balance"
+          "b) Deposit money"
+          "c) Withdraw money"
+          "d) Update personal info"
+          "e) Make Transaction"
+          "f) Check all transactions"
+          "g) Access support"
+          "h) Delete account"
+          "i) Logoff"
+          "j) Account info"
+          "================================================================")
+
+Input must be one of these lowercased letters (according to the operation that must be done)
+Afterwards. as we are already in account, we access Account.py methods from here.
+
+
+2.3 encryption.py - encrypts password to be stored in DB (Safety measures)
+Encryption is manually written and consists with double encryption: 
+ - First Ceasar cypher
+ - Next, the result of Caesar cypher is encrypted with Viginere Cypher 
+
+
+2.4 check_if_IBAN_already_in_db (entry) - checks if IBAN already in DB
+entry - object of type Account
+If IBAN number coincides with the one that already exists, then repeat IBAN generation, until unique one is generated
+
+
+2.5 check_if_IBAN_already_in_db (entry) - checks if id already in DB
+Does the same as check_if_IBAN_already_in_db 
+
+
+2.6 insert_entries_into_db(entry) - function to add account type object information to the DB table
+Connection to the DB is done with psycopg2 library. It utilizes simple script that extracts information from entry(Account)
+and adds it to the DB table.
+
+
+2.7 password_check() - function that is called during creation of new Account, at the stage of entering new password
+Let you create password only if it matches the requirements: 1) Minimum 8 symbols;
+							     2) Minimum 1 number symbol;
+							     3) Minimum 1 special symbol;
+							     4) Minimum 1 uppercased symbol;
+							     5) No spaces;
+
+Also, newly created password must be confirmed by entering it once again, if it doesn't coincide, then you need to repeat all again.
+
+2.8 Security.py - checks if password, or PIN was entered correctly.
+
+
+2.8.1 check_validity_password(entry) - checks password validity from the DB.
+entry - object of type Account
+Password is extracted from the DB, decrypted so that it could match the actual password that you want to enter.
+If it doesn't match, error_count of account is increased by 1.
+If error_count >= 4, then account is blocked and can be reactivated by the admin of the bank.
+
+2.8.2 check_validity_PIN(entry) - checks PIN validity from the DB.
+Similar to check_validity_password(entry), but does the same for PIN (without decryption, but could be further implemented)
+
+
+
+3. Further improvements possibilities
+ - Implement password/PIN error count into DB
+ - Make better GUI for interraction with the bank
+ - Create script to clean terminal screen after each action
+ - Solve softlock when logging in and logging off many times (not able to exit program without 
+   stopping execution of program)
+ 
+
+4. Libraries used:
+ - numpy;
+ - psycopg2;
+ - re;
+ - datetime;
+ - os, sys - didn't use, but potentially can be used to improve further
